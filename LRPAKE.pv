@@ -1,0 +1,194 @@
+(* A Lightweight Leakage-Resilient Password Authentication Key Exchange Scheme for Smart Meters*) 
+(* This code is based on ''Abbasinezhad-Mood, Dariush, et al. 
+"Efficient provably-secure dynamic ID-based authenticated key agreement scheme with enhanced security provision." 
+IEEE Transactions on Dependable and Secure Computing (2020).'' *)
+
+(* Channel Definition *)
+free secure_net : channel [private]. (* Secure channel between server and user *)
+free public_net : channel.           (* Public channel between server and user *)
+
+(*type G. *)
+
+(* Private Terms *)
+free IDa : bitstring [private]. (* Userʹs identifier *)
+free IDb : bitstring [private]. (* Userʹs identifier *)
+
+(* free PW : bitstring [private]. (* Userʹs password *)
+free PW : bitstring [private]. (*Userʹs password *)
+equation PW = PW. *)
+free PW : bitstring [private].
+
+free SK : bitstring [private].  (* Shared session key *)
+free ska : bitstring [private].  (* Secret key of user *)
+free skb : bitstring [private].  (* Secret key of server *)
+
+(* Public Terms *)
+const g : bitstring.  (* Base point *)
+(* free IDsc : bitstring. SC identifier *)
+
+(* Functions *)
+fun Decode(bitstring,bitstring) : bitstring.
+fun Encode1(bitstring) : bitstring.
+fun Encode2(bitstring) : bitstring.
+equation forall x: bitstring, x1: bitstring, x2: bitstring; Decode(Encode1(x),Encode2(x)) = x.
+
+fun Encode11(bitstring,bitstring) : bitstring.
+fun Encode22(bitstring,bitstring) : bitstring.
+equation forall x: bitstring, x1: bitstring, x2: bitstring; Decode(Encode11(x,x1),Encode22(x,x2)) = x.
+
+
+fun enc(bitstring, bitstring) : bitstring. (* Symmetric encryption *)
+reduc forall x: bitstring, key: bitstring; dec(key, enc(key,x)) = x.
+
+fun Hash1(bitstring) : bitstring. (* One‐input Hash *)
+fun Hash2(bitstring, bitstring) : bitstring. (* Two‐input Hash *)
+fun Hash3(bitstring, bitstring, bitstring) : bitstring. (* Three‐input Hash *)
+fun Hash4(bitstring, bitstring, bitstring, bitstring) : bitstring. (* Four‐input Hash *)
+fun Hash5(bitstring, bitstring, bitstring, bitstring, bitstring) : bitstring. (* Five‐input Hash *)
+fun Hash6(bitstring, bitstring, bitstring, bitstring, bitstring, bitstring) : bitstring. (* Six‐input Hash *)
+fun Hash7(bitstring, bitstring, bitstring, bitstring, bitstring, bitstring, bitstring) :bitstring. (* Seven‐input Hash *)
+
+fun XOR(bitstring, bitstring) : bitstring. (* Exclusive OR *)
+equation forall m1 : bitstring, m2 : bitstring; XOR(m1, m2) = XOR(m2, m1).
+reduc forall m1 : bitstring, m2 : bitstring; DXOR(XOR(m1, m2), m2) = m1. 
+
+
+fun ScalarMul(bitstring, bitstring): bitstring.
+fun Mul(bitstring, bitstring): bitstring.
+fun Add(bitstring, bitstring): bitstring.
+equation forall x: bitstring, y: bitstring; ScalarMul(ScalarMul(g, x), y) = ScalarMul(ScalarMul(g, y), x).
+
+(* Destructobs *)
+fun ConcatSix(bitstring, bitstring, bitstring, bitstring, bitstring, bitstring) : bitstring. (* Cncatenation *)
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring, m4 : bitstring, m5 : bitstring, m6 : bitstring; Separate1(ConcatSix(m1, m2, m3, m4, m5, m6)) = m1.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring, m4 : bitstring, m5 : bitstring, m6 : bitstring; Separate2(ConcatSix(m1, m2, m3, m4, m5, m6)) = m2.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring, m4 : bitstring, m5 : bitstring, m6 : bitstring; Separate3(ConcatSix(m1, m2, m3, m4, m5, m6)) = m3.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring, m4 : bitstring, m5 : bitstring, m6 : bitstring; Separate4(ConcatSix(m1, m2, m3, m4, m5, m6)) = m4.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring, m4 : bitstring, m5 : bitstring, m6 : bitstring; Separate5(ConcatSix(m1, m2, m3, m4, m5, m6)) = m5.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring, m4 : bitstring, m5 : bitstring, m6 : bitstring; Separate6(ConcatSix(m1, m2, m3, m4, m5, m6)) = m6.
+
+
+(* Equations *)
+
+
+(* queries *)
+(* query attacker (new beta). *)   (* Uncomment when checking KSSTIA resistance *)
+(* query attacker (new alpha). *) (* Uncomment when checking KSSTIA resistance *)
+(* query attacker (ska).             A query to check the secrecy of generated session key *)
+(*query attacker (skb). *)
+ (*noninterf IDa.                  A query to check the strong anonymity of user *)
+(* noninterf IDb.                   A query to check the strong anonymity of user *)
+(* weaksecret PW.  *) (*A query to check the resistance against the offline password guessing attack *)
+
+
+
+query inj-event(EndUserA) ==> inj-event(BeginServerB). 
+query inj-event(EndServerB) ==> inj-event(BeginUserA).
+query attacker (ska).
+query attacker (skb).
+query attacker (IDa).
+query attacker (IDb).
+weaksecret PW.
+
+
+(* Events *)
+event BeginUserA. 
+event EndUserA.
+event BeginServerB.
+event EndServerB.
+
+
+(* b:Server process *)
+
+let processS() =
+    let PKb = ScalarMul(g, skb) in
+    out (public_net, (PKb));
+    in (public_net, (PKa:bitstring));
+    new sb : bitstring;
+    let hwb = XOR(Hash1(PW),sb) in
+    let Db =XOR(Hash1(sb),IDb) in
+    (* out (public_net, (hwb, Db)); *)
+    out (secure_net, (sb,hwb));
+    in (secure_net, (Za:bitstring,Zb:bitstring));
+    (* in (public_net,(Da:bitstring)); *)
+    new yb : bitstring;
+    (* let hb = Hash1(ska) in *)
+    let Xb = Hash1(XOR(XOR(XOR(hwb,Db),skb),yb)) in
+    (* let Xb = XOR(XOR(Hash1(hwb),hb),Hash1(yb)) in *)
+    let Yb = ScalarMul(g, Add(skb,yb)) in
+
+    event BeginServerB;
+    in (public_net,(xXa:bitstring,xYa:bitstring,xTa:bitstring,xCa:bitstring,xAuth:bitstring));
+    new Tb : bitstring;
+    let Ka''  = XOR(DXOR(Zb,Hash2(hwb,PKb)),xXa) in
+    let ya'' = DXOR(dec(Ka'',xAuth), xTa) in
+    let Ca'' = Hash3(xTa,ya'',xAuth) in
+    if (Ca'' = xCa) then 
+        let Vb = ScalarMul(xYa,Add(skb,yb)) in
+        let skkb = XOR(XOR(xXa,Xb),Hash1(Vb)) in
+        let tempb = ConcatSix(Tb, hwb, yb, xXa, Vb, xTa) in
+        let Eb = enc(skkb, tempb) in
+        out (public_net,(Xb,Yb,Tb,Eb)); 
+
+    in (public_net,(Ea:bitstring));
+    let tempaa = dec(skkb, Ea) in
+    let xb' = Separate5(tempaa) in
+    let va' = Separate5(tempaa) in
+    if (xb' = Xb) then 
+        if (va' = Vb) then 
+            let SKb = Hash5(skkb,Za,xYa,Zb,Yb) in 
+    event EndServerB;
+    0.
+
+
+(* User process *)
+let processU() =
+    let PKa = ScalarMul(g, ska) in
+    out (public_net, (PKa));
+    in (public_net, (PKb:bitstring));
+    new sa : bitstring;
+    let hwa = XOR(Hash1(PW),sa) in
+    let Da =XOR(Hash1(sa),IDa) in
+    (* out (public_net, (hwa,Da)); *)
+    out (secure_net, (sa,hwa));
+    in (secure_net, (Za:bitstring,Zb:bitstring));
+    (* in (public_net,(Db:bitstring)); *)
+    new ya : bitstring;
+    let Xa = Hash1(XOR(XOR(XOR(hwa,Da),ska),ya)) in
+    let Ya = ScalarMul(g, Add(ska,ya)) in
+    new Ta : bitstring;
+    let Ka = XOR(DXOR(Za, Hash2(hwa,PKa)),Xa) in
+    let Auth = enc(Ka, XOR(ya,Ta)) in
+    let Ca = Hash3(Ta, ya, Auth) in
+    out (public_net, (Xa,Ya,Ta,Ca,Auth));
+
+    event BeginUserA;
+    in (public_net,(xXb:bitstring,xYb:bitstring,xTb:bitstring,xEb:bitstring));
+    let Va = ScalarMul(xYb,Add(ska,ya)) in
+    let skka = XOR(XOR(Xa,xXb),Hash1(Va)) in
+    let tempbb = dec(skka, xEb) in
+    let xa'' = Separate4(tempbb) in
+    let vb'' = Separate5(tempbb) in
+    if (xa'' = Xa) then 
+        if (vb'' = Va) then 
+            let tempa = ConcatSix(xTb,hwa,ya,ska,xXb,Va) in
+            let Ea = enc(skka, tempa) in
+            out(public_net,(Ea));
+            let SKa = Hash5(skka,Za,Ya,Zb,xYb) in
+    event EndUserA; 
+    0.
+
+let processCA() =
+    in (secure_net, (sa:bitstring,sb:bitstring,hwa:bitstring,hwb:bitstring));
+    in (public_net, (PKa:bitstring,PKb:bitstring));
+    new a : bitstring;
+    new b : bitstring;
+    let Za = XOR(Hash4(a,b,sa,sb), Hash2(hwa,PKa)) in
+    let Zb = XOR(Hash4(a,b,sa,sb), Hash2(hwb,PKb)) in
+    out (secure_net, (Za,Zb));
+0. 
+
+process 
+    ((!processS) | (!processU))  (* Comment in case of the perfect forward secrecy check*)
+    (* ((!pS) | (!pU)| (phase 1 ; out (S_U_public_net, (sk, PWu, IDu)))) *) (* Uncomment to check the perfect forward secrecy *)
+
