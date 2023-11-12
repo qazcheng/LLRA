@@ -1,4 +1,4 @@
-(* A Lightweight Leakage-Resilient Password Authentication Key Exchange Scheme for Smart Meters*) 
+(* LLRA: A Lightweight Leakage-Resilient Authentication Key Exchange Scheme for Smart Meters*) 
 (* This code is based on ''Abbasinezhad-Mood, Dariush, et al. 
 "Efficient provably-secure dynamic ID-based authenticated key agreement scheme with enhanced security provision." 
 IEEE Transactions on Dependable and Secure Computing (2020).'' *)
